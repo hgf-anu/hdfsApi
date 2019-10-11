@@ -1,10 +1,7 @@
 package com.yaxin.hdfsclient;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.*;
 import org.apache.hadoop.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -55,10 +52,9 @@ public class HDFSClient {
      * 重命名
      *
      * @throws IOException
-     * @throws InterruptedException
      */
     @Test
-    public void rename() throws IOException, InterruptedException {
+    public void rename() throws IOException {
         fs.rename(new Path("/1.txt"), new Path("/2.txt"));
     }
 
@@ -94,34 +90,60 @@ public class HDFSClient {
     }
 
     /**
+     * ls的api,可以访问文件夹和文件
+     *
      * @throws IOException
      */
     @Test
     public void ls() throws IOException {
         //ls的全称就是listStatus
         FileStatus[] fileStatuses = fs.listStatus(new Path("/"));
-        for (FileStatus fileStatus: fileStatuses) {
-            if(fileStatus.isFile()){
+        for (FileStatus fileStatus : fileStatuses) {
+            if (fileStatus.isFile()) {
                 System.out.println("以下信息是一个文件信息");
-                System.out.println("文件路径:"+fileStatus.getPath());
-                System.out.println("文件长度:"+fileStatus.getLen());
-                System.out.println("文件权限:"+fileStatus.getPermission());
-                System.out.println("文件块大小:"+fileStatus.getBlockSize());
-                System.out.println("文件所属者:"+fileStatus.getOwner());
-                System.out.println("文件副本数:"+fileStatus.getReplication());
-                System.out.println("文件通过时间:"+fileStatus.getAccessTime());
+                System.out.println("文件路径:" + fileStatus.getPath());
+                System.out.println("文件长度:" + fileStatus.getLen());
+                System.out.println("文件权限:" + fileStatus.getPermission());
+                System.out.println("文件块大小:" + fileStatus.getBlockSize());
+                System.out.println("文件所属者:" + fileStatus.getOwner());
+                System.out.println("文件副本数:" + fileStatus.getReplication());
+                System.out.println("文件通过时间:" + fileStatus.getAccessTime());
                 System.out.println("----------------------");
-            }else if(fileStatus.isDirectory()){
+            } else if (fileStatus.isDirectory()) {
                 System.out.println("这是一个文件夹信息!");
                 System.out.println(fileStatus.getPath());
                 System.out.println("----------------------");
-            }else if(fileStatus.isSymlink()){
+            } else if (fileStatus.isSymlink()) {
                 //可能有软链接,还要单独判断
                 System.out.println("这是一个软链接!");
                 System.out.println(fileStatus.getPath());
                 System.out.println("----------------------");
-            }else {
+            } else {
+                System.out.println("error");
+            }
+        }
+    }
 
+    /**
+     * 只浏览文件,不能浏览文件夹
+     */
+    @Test
+    public void listFile() throws IOException {
+        RemoteIterator<LocatedFileStatus> files = fs.listFiles(new Path("/"), true);
+        while (files.hasNext()) {
+            LocatedFileStatus file = files.next();
+            System.out.println("===============================");
+            System.out.println(file.getPath());
+
+            System.out.println("块信息:");
+            BlockLocation[] blockLocations = file.getBlockLocations();
+            for (BlockLocation blockLocation : blockLocations) {
+                String[] hosts = blockLocation.getHosts();
+                System.out.print("块在");
+                for (String host : hosts) {
+                    System.out.print(host + " ");
+                }
+                System.out.println();
             }
         }
     }
